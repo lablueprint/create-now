@@ -1,13 +1,9 @@
 name: Mobile
 
+# Runs on every PR so "Typecheck, lint, tests" can be a required check; the test
+# job skips itself (counted as passing) when nothing mobile-related changed.
 on:
   pull_request:
-    paths:
-      - "mobile/**"
-      - "supabase/**"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/mobile.yml"
   push:
     branches: [main]
   workflow_dispatch:
@@ -17,8 +13,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect mobile changes
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.filter.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            mobile:
+              - "mobile/**"
+              - "supabase/**"
+              - "package.json"
+              - "package-lock.json"
+              - ".github/workflows/mobile.yml"
+
   test:
     name: Typecheck, lint, tests
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
