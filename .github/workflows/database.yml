@@ -1,0 +1,59 @@
+name: Database
+
+# Runs on PRs that touch the database, and on every push to main.
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/database.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: database-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Migrations, tests, schema sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      # Installs the Supabase CLI version pinned in the root package.json.
+      - name: Install root dependencies (Supabase CLI)
+        run: npm ci
+
+      # Applies every migration + seed.sql from scratch: fails on broken SQL.
+      # Only Postgres + Auth are needed for tests; skip the rest to save time.
+      # NOTE: remove storage-api from this list once we add storage buckets/policies.
+      - name: Start local Supabase
+        run: >
+          npx supabase start
+          -x studio,mailpit,imgproxy,edge-runtime,logflare,vector,realtime,storage-api,supavisor,postgres-meta
+
+      - name: Run pgTAP tests
+        run: npm run db:test
+
+      # Fails if supabase/schemas/ was edited without committing the generated
+      # migration (i.e. someone forgot `npm run db:sync -- <name>`).
+      - name: Check schemas and migrations are in sync
+        run: |
+          npm run db:sync -- ci_sync_check
+          if [ -n "$(git status --porcelain supabase/migrations)" ]; then
+            echo "::error::supabase/schemas/ has changes with no matching migration. Run 'npm run db:sync -- <name>' locally and commit the new migration."
+            git status --porcelain supabase/migrations
+            cat supabase/migrations/*_ci_sync_check.sql || true
+            exit 1
+          fi
+          echo "Schemas and migrations are in sync."

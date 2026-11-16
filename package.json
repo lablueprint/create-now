@@ -1,0 +1,17 @@
+{
+  "name": "create-now",
+  "private": true,
+  "description": "Create Now monorepo: mobile app (Expo) and Supabase backend",
+  "scripts": {
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:sync": "supabase db schema declarative sync --no-apply --name",
+    "db:types": "supabase gen types typescript --local > mobile/src/types/database.types.ts"
+  },
+  "devDependencies": {
+    "supabase": "3.1.0"
+  }
+}

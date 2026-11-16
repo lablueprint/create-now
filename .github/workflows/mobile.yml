@@ -1,0 +1,64 @@
+name: Mobile
+
+on:
+  pull_request:
+    paths:
+      - "mobile/**"
+      - "supabase/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/mobile.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck, lint, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+
+      - name: Install root dependencies (Supabase CLI)
+        run: npm ci
+
+      - name: Install mobile dependencies
+        run: npm ci
+        working-directory: mobile
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: mobile
+
+      - name: Lint
+        run: npm run lint
+        working-directory: mobile
+
+      # Service tests call the real local Supabase (Auth + REST) with seed.sql users.
+      - name: Start local Supabase
+        run: >
+          npx supabase start
+          -x studio,mailpit,imgproxy,edge-runtime,logflare,vector,realtime,storage-api,supavisor,postgres-meta
+
+      - name: Set Supabase env vars
+        run: |
+          echo "EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321" >> "$GITHUB_ENV"
+          echo "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(npx supabase status -o json | jq -r .PUBLISHABLE_KEY)" >> "$GITHUB_ENV"
+
+      - name: Run tests
+        run: npm test -- --ci
+        working-directory: mobile
