@@ -1,24 +1,40 @@
 name: Database
 
-# Runs on PRs that touch the database, and on every push to main.
+# Runs on every PR and push to main
+# Skips test/deploy when nothing changed in database
 on:
   pull_request:
-    paths:
-      - "supabase/**"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/database.yml"
   push:
     branches: [main]
   workflow_dispatch:
 
 concurrency:
   group: database-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs, but never cancel a deploy halfway through.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Detect database changes
+    runs-on: ubuntu-latest
+    outputs:
+      database: ${{ steps.filter.outputs.database }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            database:
+              - "supabase/**"
+              - "package.json"
+              - "package-lock.json"
+              - ".github/workflows/database.yml"
+
   test:
     name: Migrations, tests, schema sync
+    needs: changes
+    if: needs.changes.outputs.database == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -57,3 +73,33 @@ jobs:
             exit 1
           fi
           echo "Schemas and migrations are in sync."
+
+  # Applies new migrations to the hosted project after merge to main
+  deploy:
+    name: Deploy migrations to Supabase
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      SUPABASE_PROJECT_REF: ifuwwhnqrrgciugjnrkt
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install root dependencies (Supabase CLI)
+        run: npm ci
+
+      - name: Show pending migrations
+        run: npx supabase db push --remote="$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --dry-run
+
+      - name: Apply migrations
+        run: npx supabase db push --remote="$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --yes
