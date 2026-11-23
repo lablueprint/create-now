@@ -1,4 +1,6 @@
--- security definer: is the current user an admin?
+-- Auth helpers used by RLS policies
+
+-- is_admin(): security definer; is the current user an admin?
 
 create function public.is_admin()
 returns boolean

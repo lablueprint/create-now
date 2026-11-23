@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "profiles": {
                   Row: {
-                    "birth_date": string,"created_at": string,"id": string,"role": Database["public"]['Enums']["user_role"],"state": string,"track": Database["public"]['Enums']["art_track"],"username": string
+                    "birth_date": string,"created_at": string,"id": string,"role": Database["public"]['Enums']["user_role"],"state": string,"track": Database["public"]['Enums']["track"],"username": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date": string,"created_at"?: string,"id": string,"role"?: Database["public"]['Enums']["user_role"],"state": string,"track"?: Database["public"]['Enums']["art_track"],"username": string
+                    "birth_date": string,"created_at"?: string,"id": string,"role"?: Database["public"]['Enums']["user_role"],"state": string,"track"?: Database["public"]['Enums']["track"],"username": string
                   }
                   Update: {
-                    "birth_date"?: string,"created_at"?: string,"id"?: string,"role"?: Database["public"]['Enums']["user_role"],"state"?: string,"track"?: Database["public"]['Enums']["art_track"],"username"?: string
+                    "birth_date"?: string,"created_at"?: string,"id"?: string,"role"?: Database["public"]['Enums']["user_role"],"state"?: string,"track"?: Database["public"]['Enums']["track"],"username"?: string
                   }
                   Relationships: [
                     
@@ -43,12 +43,15 @@ export type Database = {
             [_ in never]: never
           }
           Functions: {
-            "is_admin":
+            "app_today":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            }
           }
           Enums: {
-            "art_track": "beginner"|"advanced","user_role": "artist"|"admin"
+            "activity_kind": "upload"|"daily_prompt","guardian_consent": "not_required"|"pending"|"approved"|"denied","moderation_status": "pending"|"flagged"|"approved"|"removed","prompt_status": "draft"|"published"|"archived","submission_visibility": "private"|"community","track": "beginner"|"advanced","user_role": "artist"|"admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -168,7 +171,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "art_track": ["beginner", "advanced"],"user_role": ["artist", "admin"]
+            "activity_kind": ["upload", "daily_prompt"],"guardian_consent": ["not_required", "pending", "approved", "denied"],"moderation_status": ["pending", "flagged", "approved", "removed"],"prompt_status": ["draft", "published", "archived"],"submission_visibility": ["private", "community"],"track": ["beginner", "advanced"],"user_role": ["artist", "admin"]
           }
         }
 } as const

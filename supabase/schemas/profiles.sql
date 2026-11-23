@@ -2,7 +2,7 @@ create table public.profiles (
   id          uuid primary key references auth.users (id) on delete cascade,
   username    text not null unique,
   birth_date  date not null
-              check (birth_date > '1900-01-01' and birth_date <= current_date),
+              check (birth_date > '1900-01-01' and birth_date <= public.app_today()),
   state       char(2) not null
               check (state in (
                 'AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN',
@@ -10,7 +10,7 @@ create table public.profiles (
                 'NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT',
                 'VT','VA','WA','WV','WI','WY'
               )),
-  track       public.art_track not null default 'beginner',
+  track       public.track not null default 'beginner',
   role        public.user_role not null default 'artist',
   created_at  timestamptz not null default now()
 );

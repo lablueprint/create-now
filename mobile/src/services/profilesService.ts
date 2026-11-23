@@ -4,7 +4,7 @@ import type { Profile } from '@/types'
 export const profilesService = {
   
   /**
-  * Returns null if the profile doesn't exist or RLS hides it from the caller.
+  * Returns null if the profile doesn't exist or RLS doesn't let caller see it
   */
   async getProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await supabase

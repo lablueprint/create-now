@@ -44,7 +44,7 @@ select throws_ok(
 );
 select throws_ok(
   $$ insert into public.profiles (id, username, birth_date, state)
-     values ('c0000000-0000-0000-0000-000000000001', 'some_user', current_date + 1, 'CA') $$,
+     values ('c0000000-0000-0000-0000-000000000001', 'some_user', public.app_today() + 1, 'CA') $$,
   '23514', null, 'birth_date cannot be in the future'
 );
 select throws_ok(
@@ -53,7 +53,7 @@ select throws_ok(
   '23505', null, 'username must be unique'
 );
 select col_default_is('public', 'profiles', 'role', 'artist'::public.user_role, 'role defaults to artist');
-select col_default_is('public', 'profiles', 'track', 'beginner'::public.art_track, 'track defaults to beginner');
+select col_default_is('public', 'profiles', 'track', 'beginner'::public.track, 'track defaults to beginner');
 
 -- RLS as artist A
 set local role authenticated;
