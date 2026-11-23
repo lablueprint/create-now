@@ -83,9 +83,9 @@ jobs:
     timeout-minutes: 10
     environment: production
     env:
-      SUPABASE_PROJECT_REF: ifuwwhnqrrgciugjnrkt
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # Session pooler URL (IPv4)
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
     steps:
       - uses: actions/checkout@v5
@@ -99,7 +99,7 @@ jobs:
         run: npm ci
 
       - name: Show pending migrations
-        run: npx supabase db push --remote="$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --dry-run
+        run: npx supabase db push --remote="$SUPABASE_DB_URL" --dry-run
 
       - name: Apply migrations
-        run: npx supabase db push --remote="$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --yes
+        run: npx supabase db push --remote="$SUPABASE_DB_URL" --yes
